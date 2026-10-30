@@ -8,7 +8,7 @@
 #
 # Secret Manager with OTP feature
 # 
-# by qmarty@inbox.ru
+# by qmarty@inbox.ru and DeepSeek
 
 
 SCOPE: 
@@ -20,7 +20,8 @@ DESCRIPTION:
 ------------
 
 The program can be used as manager and as a module to retrieve secrets.
-The secrets are stored in sqlite3 secrets.db and the master key to be added as user environment variable (as MASTER_KEY) will be saved in .secret_key in a local user accessible path.
+The secrets are stored in sqlite3 secrets.db and the master key to be added as user environment variable (as MASTER_KEY) will 
+be saved in .secret_key in a local user accessible path.
 
 CLI USAGE:
 ------------
@@ -28,8 +29,8 @@ The secret record is composed by:
 [Key] 		key name, or url
 [Secret] 	the secret to hide and store, it can be generated randomly with the lateral button and
 		at the same time is copied to clipboard
-[Environment] 	the "contest" i.e. can be web, school, etc. if OTP this will be interpreted as OTP see 			below about that.
-[Descriptio]	I set usernames here, or whatever if the secret is about a server, rather than a 			connection to something
+[Environment] 	the "contest" i.e. can be web, school, etc. if OTP this will be interpreted as OTP see below about that.
+[Descriptio]	I set usernames here, or whatever if the secret is about a server, rather than a connection to something
 
 The prompt is interactive and self explaining:
 
@@ -126,7 +127,9 @@ TRICKS AND TIPS
 This tool does not connect to network nor internet, if it does tell me because I didn't code 
 that and it shall not.
 
-In the "All secrets" tab you'll see green highlighted rows : those are the ones with OTP as Environment and they differ because while normally the double-click on the row will copy to clipboard the secret in this case the value copied will be the OTP, also shown in a info pop-up.
+In the "All secrets" tab you'll see green highlighted rows : those are the ones with OTP as Environment and they differ because 
+while normally the double-click on the row will copy to clipboard the secret in this case the value copied will be the OTP, also 
+shown in a info pop-up.
 
 OTP
 ----------------
