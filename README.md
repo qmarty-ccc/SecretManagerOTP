@@ -26,13 +26,12 @@ The prompt is interactive and self explaining:
 
 C:\Tools>python secret_manager.py
 
-==========================
 🔐 SECURE SECRET MANAGER
-==========================
+
 
 💡 Tip: You can paste values with Ctrl+V
    The value will be visible while typing
-============================================================
+
 ✅ Using MASTER_KEY from environment
 
 📌 Menu:
