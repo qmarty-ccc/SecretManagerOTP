@@ -99,6 +99,7 @@ pyinstaller secrets_manager_gui.py ^
     --distpath c:\novirus\ ^
     --icon vault.ico ^
     --add-data "vault.ico;." ^
+    --add-data "vault.png;." ^
     --collect-binaries cryptography ^
     --collect-data cryptography ^
     --collect-submodules cryptography ^
@@ -115,6 +116,7 @@ pyinstaller secrets_manager_gui.py \
     --distpath ./novirus/ \
     --icon vault.ico \
     --add-data "vault.ico:." \
+    --add-data "vault.png:." \
     --collect-binaries cryptography \
     --collect-data cryptography \
     --collect-submodules cryptography \
