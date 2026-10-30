@@ -136,5 +136,5 @@ shown in a info pop-up.
 OTP
 ----------------
 
-To associate an OTP whenever you see the QR code onscreen, save the QR code picture as .jps. 
+To associate an OTP whenever you see the QR code onscreen, save the QR code picture as .jpg,.png or .bmp. 
 Then in "New" secret pick it up with the side button (on the right of the Environment input field where OTP shall be written). Give it a name and then save and you are done.
