@@ -95,7 +95,8 @@ the GUI interface just helps to manage the application easier.
 	GNU - ~/.local/share/SecretManager/
 	MAC - ~/Library/Application Support/SecretManager/
 [+] it auto set the MASTER_KEY as user environment variable
-[+] given a saved QR code picture (jpeg) it can provide OTP for that application
+[+] given a saved QR code picture (jpeg) it can provide OTP for that application,
+[+] Portable feature
 
 if it finds secrests.db in same folder at first run it exports and use that one, otherwise
 it will create a new one.
@@ -119,7 +120,7 @@ pyinstaller secrets_manager_gui.py ^
     --exclude-module cv2 
  
     
-Optionally:    
+Optionally (saves 10Mb):    
     --upx-dir %USERPROFILE%\Documents\SVILUPPO\TOOLS\upx-4.2.2-win64 
 
 
@@ -145,7 +146,6 @@ pyinstaller secrets_manager_gui.py \
 optionally (after sudo apt install upx-ucl):
     --upx-dir /usr/bin
     
-NOTE : if you use the .spec config file then you just need to run pyinstaller SecretManager.spec --clean (the .spec uses upx). On windows some WARNINGS/WinERROR come up because the Strip=True (which saves 5 Mb on GNU/linux)   
 
 TRICKS AND TIPS
 -------------------------------------------------------
@@ -160,3 +160,21 @@ OTP
 
 To associate an OTP whenever you see the QR code onscreen, save the QR code picture as .jps. 
 Then in "New" secret pick it up with the side button (on the right of the Environment input field where OTP shall be written). Give it a name and then save and you are done.
+
+EXAMPLES
+-------------------------------------------------------
+Retrieve a MY_SECRET:
+
+python secret_manager.py get MY_SECRET
+
+List secrets:
+
+python secret_manager.py list
+
+Use a different secret DB and secret key:
+
+python secret_manager.py --portable c:\tmp\my_secrets.db e:\.my_master_key
+
+or
+
+python secret_manager.py --portable c":\tmp\my_secrets.db;e:\.my_master_key"
