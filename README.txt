@@ -8,7 +8,7 @@
 #
 # Secret Manager with OTP feature
 # 
-# by qmarty@inbox.ru and DeepSeek
+# by qmarty@inbox.ru
 
 
 SCOPE: 
@@ -16,12 +16,22 @@ SCOPE:
 
 this script will manage secrets for applications, sites, whatever.  Will also provide OTPs (google compatible)
 
+DEPENDENCIES
+------------
+requirements.txt is available, on linux few more could be necessary:
+sudo apt update
+sudo apt install python3-tk libzbar0 libsecret-1-0 gnome-keyring python-tk
+
 DESCRIPTION:
 ------------
 
 The program can be used as manager and as a module to retrieve secrets.
-The secrets are stored in sqlite3 secrets.db and the master key to be added as user environment variable (as MASTER_KEY) will 
-be saved in .secret_key in a local user accessible path.
+The secrets are stored in sqlite3 secrets.db and the master key to be added as user environment variable (as MASTER_KEY) will be saved in .secret_key in a local user accessible path.
+It has been recently adapted to integrate with OS:
+[+] Added a non-interactive CLI (secretmanager get KEY).
+[+] Added a secretmanager exec command to inject secrets into other apps.
+[+] Integrated the keyring library so the MASTER_KEY is stored in Windows Credential Manager / GNOME Keyring instead of a flat file.
+[+] Added --portable feature, to enable the use of different .master_key and secrets.db temporarly
 
 CLI USAGE:
 ------------
@@ -30,7 +40,7 @@ The secret record is composed by:
 [Secret] 	the secret to hide and store, it can be generated randomly with the lateral button and
 		at the same time is copied to clipboard
 [Environment] 	the "contest" i.e. can be web, school, etc. if OTP this will be interpreted as OTP see below about that.
-[Descriptio]	I set usernames here, or whatever if the secret is about a server, rather than a connection to something
+[Description]	I set usernames here, or whatever if the secret is about a server, rather than a connection to something
 
 The prompt is interactive and self explaining:
 
@@ -103,8 +113,14 @@ pyinstaller secrets_manager_gui.py ^
     --collect-binaries cryptography ^
     --collect-data cryptography ^
     --collect-submodules cryptography ^
-    --exclude-module cv2 ^
-    --hidden-import PIL
+    --collect-all pyzbar ^
+    --collect-all keyring ^
+    --hidden-import PIL ^
+    --exclude-module cv2 
+ 
+    
+Optionally:    
+    --upx-dir %USERPROFILE%\Documents\SVILUPPO\TOOLS\upx-4.2.2-win64 
 
 
 pyinstaller instructions for  secret_manager (GNU/linux):
@@ -121,20 +137,26 @@ pyinstaller secrets_manager_gui.py \
     --collect-data cryptography \
     --collect-submodules cryptography \
     --collect-all pyzbar \
-    --hidden-import PIL
+    --collect-all keyring \
+    --hidden-import PIL \
+    --exclude-module cv2 \
+    --strip
+
+optionally (after sudo apt install upx-ucl):
+    --upx-dir /usr/bin
+    
+NOTE : if you use the .spec config file then you just need to run pyinstaller SecretManager.spec --clean (the .spec uses upx). On windows some WARNINGS/WinERROR come up because the Strip=True (which saves 5 Mb on GNU/linux)   
 
 TRICKS AND TIPS
 -------------------------------------------------------
 
-This tool does not connect to network nor internet, if it does tell me because I didn't code 
+This tool does not connect to network nor internet, if it does tell me because I didn't code it
 that and it shall not.
 
-In the "All secrets" tab you'll see green highlighted rows : those are the ones with OTP as Environment and they differ because 
-while normally the double-click on the row will copy to clipboard the secret in this case the value copied will be the OTP, also 
-shown in a info pop-up.
+In the "All secrets" tab you'll see green highlighted rows : those are the ones with OTP as Environment and they differ because while normally the double-click on the row will copy to clipboard the secret in this case the value copied will be the OTP, also shown in a info pop-up.
 
 OTP
 ----------------
 
-To associate an OTP whenever you see the QR code onscreen, save the QR code picture as .jpg,.png or .bmp. 
+To associate an OTP whenever you see the QR code onscreen, save the QR code picture as .jps. 
 Then in "New" secret pick it up with the side button (on the right of the Environment input field where OTP shall be written). Give it a name and then save and you are done.

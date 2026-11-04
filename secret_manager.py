@@ -28,13 +28,13 @@ from paths import db_path as default_db_path, key_path as default_key_path, lega
 class SecretManager:
     # ---------- construction ----------
 
-    def __init__(self, db_path=None, key_file=None):
+    def __init__(self, db_path=None, key_file=None, use_keyring=True):
         self.db_path   = Path(db_path)   if db_path   else default_db_path()
         self._key_file = Path(key_file)  if key_file  else default_key_path()
-
+        self._use_keyring = use_keyring
+        
         # migrate any old files *before* touching crypto
         self._migrate_legacy(legacy_candidates())
-
         self.master_key = self._get_master_key()
         self.cipher     = Fernet(self.master_key)
         self._init_database()
@@ -78,9 +78,17 @@ class SecretManager:
     def _get_master_key(self):
         env_key = os.environ.get("MASTER_KEY")
         if env_key:
-            print("✅ Using MASTER_KEY from environment")
             return env_key.encode()
-
+            
+        if self._use_keyring:    
+            try:
+                import keyring
+                stored_key = keyring.get_password("SecretManager", "master_key")
+                if stored_key:
+                    return stored_key.encode()
+            except ImportError:
+                pass
+            
         key_file = self._key_file
         if key_file.exists():
             with open(key_file, "rb") as f:
@@ -91,7 +99,7 @@ class SecretManager:
         new_key = Fernet.generate_key()
 
         key_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(key_file, "wb") as f:       # <-- self._key_file, NOT '.master_key'
+        with open(key_file, "wb") as f:
             f.write(new_key)
 
         try:
@@ -101,7 +109,15 @@ class SecretManager:
 
         print(f"✅ Master key created and saved to {key_file}")
         print("⚠️  BACKUP THIS FILE! If lost, you cannot decrypt your secrets.")
+        
+        if self._use_keyring:
+            try:
+                import keyring
+                keyring.set_password("SecretManager", "master_key", new_key.decode())
+            except ImportError:
+                pass   
         return new_key
+        
     
 # ---------- db ----------
 
@@ -267,6 +283,7 @@ def gui_input(prompt=""):
     return input()
         
 def main():
+     
     """Interactive menu"""
     print("\n" + "=" * 60)
     print("🔐 SECURE SECRET MANAGER")
@@ -359,16 +376,105 @@ def main():
             print("❌ Invalid option")
 
 if __name__ == "__main__":
-    # Only do .pth install when running from source, not when frozen.
-    if not getattr(sys, "frozen", False):
+    
+    import argparse
+    import sqlite3
+    import subprocess
+    import getpass
+    import site
+    
+    parser = argparse.ArgumentParser(description="Secret Manager CLI")
+    parser.add_argument("action", nargs="?", help="get, set, list")
+    parser.add_argument("key", nargs="?", help="The secret key")
+    parser.add_argument("--env", default=None, help="Environment")
+    parser.add_argument("--exec", dest="exec_cmd", nargs=argparse.REMAINDER, help="Run a command with secrets injected")
+    parser.add_argument("--portable", nargs=2, metavar=("DB_PATH", "KEY_PATH"), help="Use specific db and key file, bypass keyring")
+    args = parser.parse_args()
+
+    # RETRO-COMPATIBLE: If no arguments are passed, run the classic menu
+    # OR if they only passed --exec, we should run the exec block!
+    if not args.action and not args.exec_cmd and not args.portable:
+        # Only do .pth install when running the menu from source
+        if not getattr(sys, "frozen", False):
+            try:
+                script_dir = Path(__file__).resolve().parent
+                site_packages = site.getsitepackages()[0]
+                pth_file = Path(site_packages) / "secret_manager.pth"
+                if not pth_file.exists():
+                    with open(pth_file, "w") as f:
+                        f.write(str(script_dir))
+                    print(f"Site-packages needs to be updated: Created {pth_file}")
+            except Exception as e:
+                print(f"(skip .pth setup: {e})")
+        main() 
+        sys.exit(0)
+    if args.portable:
+        # Force it to use files in the current directory and ignore the Keyring
+        manager = SecretManager(db_path=args.portable[0], key_file=args.portable[1], use_keyring=False)
+        # We need a way to tell SecretManager NOT to use keyring if portable is true.
+    else:
+        manager = SecretManager()
+        # NEW: Non-interactive CLI mode
+    
+    if args.exec_cmd:
+        # Load ALL secrets into a dictionary
+        env = os.environ.copy()
+        with sqlite3.connect(manager.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            for row in conn.execute("SELECT key_name FROM secrets"):
+                key = row['key_name']
+                if key.isidentifier(): 
+                    val = manager.get_secret(key)
+                    if val:
+                        env[key] = val
+                
         try:
-            script_dir = Path(__file__).resolve().parent
-            site_packages = site.getsitepackages()[0]
-            pth_file = Path(site_packages) / "secret_manager.pth"
-            if not pth_file.exists():
-                with open(pth_file, "w") as f:
-                    f.write(str(script_dir))
-                print(f"Site-packages needs to be updated: Created {pth_file}")
-        except Exception as e:
-            print(f"(skip .pth setup: {e})")
-    main()
+            subprocess.run(args.exec_cmd, env=env, check=True)
+        except KeyboardInterrupt:
+            sys.exit(130)
+        sys.exit(0)
+
+
+    if args.action == "get":
+        if not args.key:
+            print("Error: key required", file=sys.stderr)
+            sys.exit(1)
+        old_stdout = sys.stdout
+        sys.stdout = sys.stderr
+        try:
+            val = manager.get_secret(args.key, environment=args.env)
+        finally:
+            sys.stdout = old_stdout
+            
+        if val:
+            print(val) # This goes to the REAL stdout
+        else:
+            sys.exit(1)
+        # val = manager.get_secret(args.key, environment=args.env)
+        # if val:
+            # print(val) # Print raw to stdout for scripts
+        # else:
+            # sys.exit(1) # Exit code 1 if not found (standard OS behavior)
+
+    elif args.action == "set":
+        if not args.key:
+            print("Error: key required", file=sys.stderr)
+            sys.exit(1)
+            
+        import getpass
+        # Secure prompt (doesn't save to bash history or echo to screen)
+        val = getpass.getpass(f"Enter value for {args.key}: ")
+        
+        old_stdout = sys.stdout
+        sys.stdout = sys.stderr
+        try:
+            manager.add_secret(args.key, val, environment=args.env or 'default')
+        finally:
+            sys.stdout = old_stdout
+
+    elif args.action == "list":
+        manager.list_secrets()
+        
+    else:
+        print(f"Unknown action: {args.action}", file=sys.stderr)
+        sys.exit(1)
