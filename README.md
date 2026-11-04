@@ -1,7 +1,7 @@
-<img src="vault.png" width="512">
 # SecretManagerOTP
 Another secret manager with OTP capability
 
+<img src="vault.png" width="128">
 SCOPE: 
 ------------
 
