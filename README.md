@@ -1,4 +1,5 @@
-![Screenshot](vault.png)# SecretManagerOTP
+<img src="vault.png" width="512">
+# SecretManagerOTP
 Another secret manager with OTP capability
 
 SCOPE: 
