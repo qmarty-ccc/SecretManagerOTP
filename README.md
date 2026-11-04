@@ -1,4 +1,4 @@
-# SecretManagerOTP
+![Screenshot](vault.png)# SecretManagerOTP
 Another secret manager with OTP capability
 
 SCOPE: 
