@@ -75,6 +75,7 @@ the GUI interface just helps to manage the application easier.
 	MAC - ~/Library/Application Support/SecretManager/
 [+] it auto set the MASTER_KEY as user environment variable
 [+] given a saved QR code picture (jpeg) it can provide OTP for that application
+[+] Portable feature
 
 if it finds secrests.db in same folder at first run it exports and use that one, otherwise
 it will create a new one.
@@ -92,9 +93,12 @@ pyinstaller secrets_manager_gui.py ^
     --collect-binaries cryptography ^
     --collect-data cryptography ^
     --collect-submodules cryptography ^
-    --exclude-module cv2 ^
-    --hidden-import PIL
-
+    --collect-all pyzbar ^
+    --collect-all keyring ^
+    --hidden-import PIL ^
+    --exclude-module cv2
+Optionally (saves 10 Mb):    
+    --upx-dir %USERPROFILE%\Documents\SVILUPPO\TOOLS\upx-4.2.2-win64  
 
 pyinstaller instructions for  secret_manager (GNU/linux):
 -----------------
@@ -110,7 +114,14 @@ pyinstaller secrets_manager_gui.py \
     --collect-data cryptography \
     --collect-submodules cryptography \
     --collect-all pyzbar \
-    --hidden-import PIL
+    --collect-all keyring \
+    --hidden-import PIL \
+    --exclude-module cv2 \
+    --strip
+
+optionally (after sudo apt install upx-ucl):
+    --upx-dir /usr/bin
+    
 
 TRICKS AND TIPS
 -------------------------------------------------------
@@ -127,3 +138,21 @@ OTP
 
 To associate an OTP whenever you see the QR code onscreen, save the QR code picture as .jpg,*.png or *.bmp. 
 Then in "New" secret pick it up with the side button (on the right of the Environment input field where OTP shall be written). Give it a name and then save and you are done.
+
+EXAMPLES
+-------------------------------------------------------
+Retrieve a MY_SECRET:
+
+python secret_manager.py get MY_SECRET
+
+List secrets:
+
+python secret_manager.py list
+
+Use a different secret DB and secret key:
+
+python secret_manager.py --portable c:\tmp\my_secrets.db e:\.my_master_key
+
+or
+
+python secret_manager.py --portable c":\tmp\my_secrets.db;e:\.my_master_key"
