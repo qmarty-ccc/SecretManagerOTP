@@ -576,12 +576,10 @@ class SecretDialog(tk.Toplevel):
 def main():
     # replicate the .pth registration from the CLI script
     if not getattr(sys, "frozen", False):
-        # Only run if executing as a .py file, NOT the .exe
         try:
             import sysconfig
             script_dir = Path(__file__).resolve().parent
             
-            # Get user-level site-packages (no admin rights needed)
             if os.name == 'nt':
                 user_site = Path(sysconfig.get_path('purelib', scheme='nt_user'))
             else:
@@ -590,7 +588,6 @@ def main():
             user_site.mkdir(parents=True, exist_ok=True)
             pth_file = user_site / "secret_manager.pth"
             
-            # If the .pth doesn't exist or points to a different folder, update it
             if not pth_file.exists() or str(script_dir) not in pth_file.read_text():
                 with open(pth_file, "w") as f:
                     f.write(str(script_dir) + "\n")

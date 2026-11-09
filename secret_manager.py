@@ -390,24 +390,38 @@ if __name__ == "__main__":
     parser.add_argument("--exec", dest="exec_cmd", nargs=argparse.REMAINDER, help="Run a command with secrets injected")
     parser.add_argument("--portable", nargs='+', metavar=("DB_PATH", "KEY_PATH"), help="Use specific db and key file, bypass keyring")
     args = parser.parse_args()
+if __name__ == "__main__":
+    # ... (argparse setup) ...
 
     # RETRO-COMPATIBLE: If no arguments are passed, run the classic menu
-    # OR if they only passed --exec, we should run the exec block!
     if not args.action and not args.exec_cmd and not args.portable:
+        
         # Only do .pth install when running the menu from source
         if not getattr(sys, "frozen", False):
             try:
+                import sysconfig
                 script_dir = Path(__file__).resolve().parent
-                site_packages = site.getsitepackages()[0]
-                pth_file = Path(site_packages) / "secret_manager.pth"
-                if not pth_file.exists():
+                
+                # Get USER site-packages (no sudo required)
+                if os.name == 'nt':
+                    user_site = Path(sysconfig.get_path('purelib', scheme='nt_user'))
+                else:
+                    user_site = Path(site.getusersitepackages())
+                    
+                user_site.mkdir(parents=True, exist_ok=True)
+                pth_file = user_site / "secret_manager.pth"
+                
+                # Create or update the .pth file
+                if not pth_file.exists() or str(script_dir) not in pth_file.read_text():
                     with open(pth_file, "w") as f:
-                        f.write(str(script_dir))
-                    print(f"Site-packages needs to be updated: Created {pth_file}")
+                        f.write(str(script_dir) + "\n")
+                    print(f"✅ Site-packages updated: Created {pth_file}")
             except Exception as e:
                 print(f"(skip .pth setup: {e})")
+                
         main() 
         sys.exit(0)
+
     if args.portable:
         # Handle both formats: "--portable db;key" and "--portable db key"
         if len(args.portable) == 1 and os.pathsep in args.portable[0]:
