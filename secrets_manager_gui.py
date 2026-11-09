@@ -572,18 +572,31 @@ class SecretDialog(tk.Toplevel):
             self.destroy()
 
 # ---- entry point ------------------------------------------------------------
+# ---- entry point ------------------------------------------------------------
 def main():
     # replicate the .pth registration from the CLI script
-    script_dir = Path(__file__).resolve().parent
-    try:
-        site_packages = site.getsitepackages()[0]
-        pth_file = Path(site_packages) / "secret_manager.pth"
-        if not pth_file.exists():
-            with open(pth_file, "w") as f:
-                f.write(str(script_dir))
-            print(f"Created {pth_file}")
-    except Exception as e:
-        print(f"(skip .pth setup: {e})")
+    if not getattr(sys, "frozen", False):
+        # Only run if executing as a .py file, NOT the .exe
+        try:
+            import sysconfig
+            script_dir = Path(__file__).resolve().parent
+            
+            # Get user-level site-packages (no admin rights needed)
+            if os.name == 'nt':
+                user_site = Path(sysconfig.get_path('purelib', scheme='nt_user'))
+            else:
+                user_site = Path(site.getusersitepackages())
+                
+            user_site.mkdir(parents=True, exist_ok=True)
+            pth_file = user_site / "secret_manager.pth"
+            
+            # If the .pth doesn't exist or points to a different folder, update it
+            if not pth_file.exists() or str(script_dir) not in pth_file.read_text():
+                with open(pth_file, "w") as f:
+                    f.write(str(script_dir) + "\n")
+                print(f"✅ Auto-configured Python path: Created {pth_file}")
+        except Exception as e:
+            print(f"(skip .pth setup: {e})")
 
     root = tk.Tk()
     try:

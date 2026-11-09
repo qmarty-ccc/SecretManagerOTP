@@ -388,7 +388,7 @@ if __name__ == "__main__":
     parser.add_argument("key", nargs="?", help="The secret key")
     parser.add_argument("--env", default=None, help="Environment")
     parser.add_argument("--exec", dest="exec_cmd", nargs=argparse.REMAINDER, help="Run a command with secrets injected")
-    parser.add_argument("--portable", nargs=2, metavar=("DB_PATH", "KEY_PATH"), help="Use specific db and key file, bypass keyring")
+    parser.add_argument("--portable", nargs='+', metavar=("DB_PATH", "KEY_PATH"), help="Use specific db and key file, bypass keyring")
     args = parser.parse_args()
 
     # RETRO-COMPATIBLE: If no arguments are passed, run the classic menu
@@ -409,12 +409,21 @@ if __name__ == "__main__":
         main() 
         sys.exit(0)
     if args.portable:
-        # Force it to use files in the current directory and ignore the Keyring
-        manager = SecretManager(db_path=args.portable[0], key_file=args.portable[1], use_keyring=False)
-        # We need a way to tell SecretManager NOT to use keyring if portable is true.
+        # Handle both formats: "--portable db;key" and "--portable db key"
+        if len(args.portable) == 1 and os.pathsep in args.portable[0]:
+            paths = args.portable[0].split(os.pathsep)
+            db_path = paths[0]
+            key_file = paths[1] if len(paths) > 1 else None
+        elif len(args.portable) >= 2:
+            db_path = args.portable[0]
+            key_file = args.portable[1]
+        else:
+            db_path = args.portable[0]
+            key_file = None
+            
+        manager = SecretManager(db_path=db_path, key_file=key_file, use_keyring=False)
     else:
         manager = SecretManager()
-        # NEW: Non-interactive CLI mode
     
     if args.exec_cmd:
         # Load ALL secrets into a dictionary
