@@ -80,6 +80,12 @@ class SecretManager:
         if env_key:
             return env_key.encode()
             
+        key_file = self._key_file
+        if key_file.exists():
+            with open(key_file, "rb") as f:
+                print(f"✅ Using MASTER_KEY from {key_file}")
+                return f.read()
+
         if self._use_keyring:    
             try:
                 import keyring
@@ -89,11 +95,6 @@ class SecretManager:
             except ImportError:
                 pass
             
-        key_file = self._key_file
-        if key_file.exists():
-            with open(key_file, "rb") as f:
-                print(f"✅ Using MASTER_KEY from {key_file}")
-                return f.read()
 
         print("\n🔑 First time setup - Creating master key...")
         new_key = Fernet.generate_key()
@@ -473,11 +474,11 @@ if __name__ == "__main__":
             print(val) # This goes to the REAL stdout
         else:
             sys.exit(1)
-        # val = manager.get_secret(args.key, environment=args.env)
-        # if val:
-            # print(val) # Print raw to stdout for scripts
-        # else:
-            # sys.exit(1) # Exit code 1 if not found (standard OS behavior)
+        #val = manager.get_secret(args.key, environment=args.env)
+        #if val:
+        #    print(val) # Print raw to stdout for scripts
+        #else:
+        #    sys.exit(1) # Exit code 1 if not found (standard OS behavior)
 
     elif args.action == "set":
         if not args.key:
